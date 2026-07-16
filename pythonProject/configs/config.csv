@@ -1,0 +1,9 @@
+参数名,值
+采样率 (Hz)，1000
+最小频率 (Hz)， 0.01
+最大频率 (Hz)， 500
+频率点数，128
+HDF5 数据文件路径，F:\Anylysis_project\pythonProject\output\Ground\Ground_processed.h5
+计算模式，全局
+输出目录，F:\Anylysis_project\pythonProject\output\Ground
+并行进程数，5
