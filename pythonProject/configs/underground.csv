@@ -1,0 +1,12 @@
+参数名 值 传递参数
+数据文件名 1105_014128.mat data_name
+开始时间 2022-11-05T01:41:28.024 start_time
+采样率(Hz) 1000 sample_rate
+通道数量 5 channel_count
+通道索引 1,2,3,4,5 channel_indices
+通道增益 1,1,1,1,1 channel_gains
+电长度（米） 28,35 electrical_lengths
+校准文件 CMT_7000.cmt,CMT_7001.cmt,CMT_7002.cmt calibration_files
+FFT窗口长度 65536 fft_window_length
+传感器灵敏度(mV/nT) 1 sensor_sensitivity
+通道名 Ex,Ey,Hx,Hy,Hz channel_name

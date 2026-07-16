@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1002</width>
+    <height>764</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>深井（地）电磁场数据预处理软件</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../image/矢量图标/统计分析界面.png</normaloff>../image/矢量图标/统计分析界面.png</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">background-color: rgb(0, 78, 151);
+color: rgb(255, 255, 255);</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout" stretch="8,2">
+    <item>
+     <widget class="QGroupBox" name="groupBox">
+      <property name="title">
+       <string>显示区</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout" stretch="0">
+       <item>
+        <widget class="QLineEdit" name="lineEdit">
+         <property name="styleSheet">
+          <string notr="true">background-color: rgb(255, 255, 255);
+color:rgb(0, 0, 0)</string>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="groupBox_2">
+      <property name="title">
+       <string>操作日志</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0">
+       <item>
+        <widget class="QPlainTextEdit" name="plainTextEdit">
+         <property name="styleSheet">
+          <string notr="true">background-color: rgb(255, 255, 255);
+color:rgb(0, 0, 0)</string>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1002</width>
+     <height>33</height>
+    </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="defaultUp">
+    <bool>false</bool>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>菜单</string>
+    </property>
+    <widget class="QMenu" name="menu_6">
+     <property name="title">
+      <string>打开</string>
+     </property>
+     <addaction name="action1"/>
+     <addaction name="action2"/>
+     <addaction name="action3"/>
+     <addaction name="action4"/>
+     <addaction name="action5"/>
+    </widget>
+    <addaction name="menu_6"/>
+    <addaction name="actionclose"/>
+    <addaction name="actionsave"/>
+   </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>计算</string>
+    </property>
+    <addaction name="actionpsd"/>
+    <addaction name="actionpdf"/>
+    <addaction name="actionallen"/>
+    <addaction name="actionwavelt"/>
+    <addaction name="actionpca"/>
+   </widget>
+   <widget class="QMenu" name="menu_3">
+    <property name="title">
+     <string>绘图</string>
+    </property>
+    <widget class="QMenu" name="menu_8">
+     <property name="title">
+      <string>打开绘图选项</string>
+     </property>
+     <addaction name="action01"/>
+     <addaction name="action02"/>
+     <addaction name="action03"/>
+     <addaction name="action04"/>
+     <addaction name="action05"/>
+     <addaction name="action06"/>
+     <addaction name="action07"/>
+     <addaction name="separator"/>
+     <addaction name="action08"/>
+     <addaction name="action09"/>
+     <addaction name="action10"/>
+     <addaction name="action11"/>
+    </widget>
+    <addaction name="menu_8"/>
+    <addaction name="actionreviewmap"/>
+    <addaction name="actionjocread"/>
+   </widget>
+   <widget class="QMenu" name="menu_4">
+    <property name="title">
+     <string>帮助</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menu_5">
+    <property name="tearOffEnabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>预处理</string>
+    </property>
+    <property name="separatorsCollapsible">
+     <bool>false</bool>
+    </property>
+    <widget class="QMenu" name="menu_7">
+     <property name="title">
+      <string>滤波</string>
+     </property>
+     <addaction name="action1_2"/>
+     <addaction name="action2_2"/>
+     <addaction name="action3_2"/>
+     <addaction name="action4_2"/>
+    </widget>
+    <addaction name="actiondegress"/>
+    <addaction name="actiondegress_2"/>
+    <addaction name="actioncalibration"/>
+    <addaction name="menu_7"/>
+   </widget>
+   <addaction name="menu"/>
+   <addaction name="menu_5"/>
+   <addaction name="menu_2"/>
+   <addaction name="menu_3"/>
+   <addaction name="menu_4"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionclose">
+   <property name="text">
+    <string>关闭</string>
+   </property>
+  </action>
+  <action name="actionsave">
+   <property name="text">
+    <string>保存</string>
+   </property>
+  </action>
+  <action name="actionpsd">
+   <property name="text">
+    <string>功率谱密度</string>
+   </property>
+  </action>
+  <action name="actionpdf">
+   <property name="text">
+    <string>功率谱概率密度</string>
+   </property>
+  </action>
+  <action name="actionallen">
+   <property name="text">
+    <string>艾伦方差</string>
+   </property>
+  </action>
+  <action name="actionwavelt">
+   <property name="text">
+    <string>小波变换</string>
+   </property>
+  </action>
+  <action name="actiondegress">
+   <property name="text">
+    <string>去趋势</string>
+   </property>
+  </action>
+  <action name="actiondegress_2">
+   <property name="text">
+    <string>去仪器响应</string>
+   </property>
+  </action>
+  <action name="actioncalibration">
+   <property name="text">
+    <string>电磁场校正</string>
+   </property>
+  </action>
+  <action name="actionpca">
+   <property name="text">
+    <string>主成分分析并可视化结果</string>
+   </property>
+  </action>
+  <action name="action1">
+   <property name="text">
+    <string>一键读取</string>
+   </property>
+  </action>
+  <action name="action2">
+   <property name="text">
+    <string>读取mat时间序列数据</string>
+   </property>
+  </action>
+  <action name="action3">
+   <property name="text">
+    <string>读取cfg参数</string>
+   </property>
+  </action>
+  <action name="action4">
+   <property name="text">
+    <string>打开工程配置窗口</string>
+   </property>
+  </action>
+  <action name="action1_2">
+   <property name="text">
+    <string>FIR滤波</string>
+   </property>
+  </action>
+  <action name="action2_2">
+   <property name="text">
+    <string>IIR滤波</string>
+   </property>
+  </action>
+  <action name="action3_2">
+   <property name="text">
+    <string>自适应滤波</string>
+   </property>
+  </action>
+  <action name="actionreviewmap">
+   <property name="text">
+    <string>打开场景窗口</string>
+   </property>
+  </action>
+  <action name="actionjocread">
+   <property name="text">
+    <string>工程配置环境</string>
+   </property>
+  </action>
+  <action name="action01">
+   <property name="text">
+    <string>绘制功率谱密度图</string>
+   </property>
+  </action>
+  <action name="action02">
+   <property name="text">
+    <string>绘制功率谱概率密度图</string>
+   </property>
+  </action>
+  <action name="action03">
+   <property name="text">
+    <string>绘制艾伦方差图</string>
+   </property>
+  </action>
+  <action name="action04">
+   <property name="text">
+    <string>绘制小波变换图</string>
+   </property>
+  </action>
+  <action name="action05">
+   <property name="text">
+    <string>绘制主成分分析图</string>
+   </property>
+  </action>
+  <action name="action06">
+   <property name="text">
+    <string>绘制级联滤波图</string>
+   </property>
+  </action>
+  <action name="action07">
+   <property name="text">
+    <string>绘制时间序列图</string>
+   </property>
+  </action>
+  <action name="action08">
+   <property name="text">
+    <string>绘制时域处理滤波前后对比图</string>
+   </property>
+  </action>
+  <action name="action09">
+   <property name="text">
+    <string>绘制功率谱滤波前后对比图</string>
+   </property>
+  </action>
+  <action name="action10">
+   <property name="text">
+    <string>绘制艾伦方差滤波前后对比图</string>
+   </property>
+  </action>
+  <action name="action11">
+   <property name="text">
+    <string>绘制标定频率响应曲线</string>
+   </property>
+  </action>
+  <action name="action5">
+   <property name="text">
+    <string>修改参数</string>
+   </property>
+  </action>
+  <action name="action6">
+   <property name="text">
+    <string>打开AttsExport格式mat数据</string>
+   </property>
+  </action>
+  <action name="action4_2">
+   <property name="text">
+    <string>快速带阻滤波</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
