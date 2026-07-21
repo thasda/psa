@@ -210,8 +210,11 @@ class MultiSourceSpectrum:
             }
         return results
 
-    def compute_phase(self, pairs: List[Tuple[str, str]]) -> Dict:
-        """计算相位谱（由互谱的相位角）"""
+    def compute_phase(self, pairs: List[Tuple[str, str]],
+                      conversion: str = 'rad') -> Dict:
+        """
+        计算相位谱，支持多种相位转换方式。
+        """
         results = {}
         for ch1, ch2 in pairs:
             x = self.get_channel_data(ch1)
@@ -219,14 +222,40 @@ class MultiSourceSpectrum:
             f, Pxy = signal.csd(x, y, fs=self.fs, window=self.window,
                                 nperseg=self.nperseg, noverlap=self.noverlap,
                                 nfft=self.nfft, detrend=self.detrend)
-            phase = np.angle(Pxy)
+
+            phase_rad = np.angle(Pxy)
+
+            # 转换逻辑 (与之前相同)
+            if conversion == 'rad':
+                phase_out = phase_rad
+            elif conversion == 'deg':
+                phase_out = np.rad2deg(phase_rad)
+            elif conversion == 'unwrap_rad':
+                phase_out = np.unwrap(phase_rad)
+            elif conversion == 'unwrap_deg':
+                phase_out = np.rad2deg(np.unwrap(phase_rad))
+            elif conversion == 'time_delay':
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    phase_out = np.divide(phase_rad, 2 * np.pi * f,
+                                          out=np.full_like(phase_rad, np.nan),
+                                          where=(f > 1e-12))
+            elif conversion == 'group_delay':
+                if len(phase_rad) < 3:
+                    raise ValueError("至少需要3个频率点才能计算群延迟")
+                omega = 2 * np.pi * f
+                dphase = np.gradient(phase_rad, omega)
+                phase_out = -dphase
+            else:
+                raise ValueError(f"不支持的转换方式: {conversion}")
+
             key = f"{ch1}_{ch2}"
             results[key] = {
                 'freq': f,
-                'phase': phase,
+                'phase': phase_out,
                 'Pxy': Pxy,
                 'ch1': ch1,
-                'ch2': ch2
+                'ch2': ch2,
+                'conversion': conversion  # 添加转换类型记录
             }
         return results
 
@@ -237,16 +266,17 @@ class MultiSourceSpectrum:
         将计算结果保存为 HDF5 文件。
 
         参数:
-            output_path : 输出路径
-            results     : 由 compute_* 返回的字典
+            output_path   : 输出路径
+            results       : 由 compute_* 返回的字典
             analysis_type : 'crosspower', 'coherence', 'phase'
-            global_attrs : 额外的全局属性
+            global_attrs  : 额外的全局属性
         """
         with h5py.File(output_path, 'w') as f:
             # 写入全局属性
             if global_attrs is not None:
                 for k, v in global_attrs.items():
                     f.attrs[k] = v
+
             f.attrs['analysis_type'] = analysis_type
             f.attrs['fs'] = self.fs
             f.attrs['nperseg'] = self.nperseg
@@ -255,14 +285,20 @@ class MultiSourceSpectrum:
             f.attrs['window'] = self.window
             f.attrs['detrend'] = self.detrend
             f.attrs['date'] = datetime.now().isoformat()
-            # 记录原始文件
-            f.attrs['source_files'] = [str(p) for p in self.source_paths]
 
+            # 如果是相位谱，从 results 中提取转换方式
+            if analysis_type == 'phase' and results:
+                first_key = next(iter(results))
+                if 'conversion' in results[first_key]:
+                    f.attrs['phase_conversion'] = results[first_key]['conversion']
+
+            # 写入每个通道对的数据
             for key, res in results.items():
                 grp = f.create_group(key)
                 grp.attrs['channel1'] = res['ch1']
                 grp.attrs['channel2'] = res['ch2']
                 grp.create_dataset('freq', data=res['freq'])
+
                 if analysis_type == 'crosspower':
                     grp.create_dataset('Pxy', data=res['Pxy'])
                     grp.create_dataset('real', data=np.real(res['Pxy']))
@@ -271,7 +307,11 @@ class MultiSourceSpectrum:
                     grp.create_dataset('coherence', data=res['coherence'])
                 elif analysis_type == 'phase':
                     grp.create_dataset('phase', data=res['phase'])
-                    grp.create_dataset('Pxy', data=res['Pxy'])
+                    if 'Pxy' in res:
+                        grp.create_dataset('Pxy', data=res['Pxy'])
+                    # 可选：保存转换类型到组属性
+                    if 'conversion' in res:
+                        grp.attrs['conversion'] = res['conversion']
 
 
 # -----------------------------------------------------------------------------
@@ -281,25 +321,27 @@ class MultiSourceSpectrum:
 def analyze_all_multi(source_paths: List[str],
                       pairs: List[Tuple[str, str]],
                       output_dir: Optional[str] = None,
+                      phase_conversion: str = 'rad',  # 新增
                       **kwargs):
     """
     对多源数据，同时计算互谱、相干、相位，并保存三个 HDF5 文件。
 
     参数:
-        source_paths : 数据源文件列表
-        pairs        : 通道对列表，如 [('0:EX', '1:HX'), ('EX', 'HY')]
-        output_dir   : 输出目录（默认源文件所在目录）
-        **kwargs     : 传递给 MultiSourceSpectrum 的参数 (nperseg, noverlap, ...)
+        source_paths     : 数据源文件列表
+        pairs            : 通道对列表
+        output_dir       : 输出目录
+        phase_conversion : 相位转换方式 ('rad', 'deg', 'unwrap_rad', 'unwrap_deg', 'time_delay', 'group_delay')
+        **kwargs         : 传递给 MultiSourceSpectrum 的参数
     """
     mss = MultiSourceSpectrum(source_paths, **kwargs)
 
-    # 准备输出路径
+    # 输出路径准备
     if output_dir is None:
         output_dir = Path(source_paths[0]).parent
     else:
         output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    base_name = "_".join([Path(p).stem for p in source_paths])[:50]  # 避免过长
+    base_name = "_".join([Path(p).stem for p in source_paths])[:50]
 
     # 计算并保存三种谱
     res_csd = mss.compute_csd(pairs)
@@ -308,7 +350,7 @@ def analyze_all_multi(source_paths: List[str],
     res_coh = mss.compute_coherence(pairs)
     mss.save_results(output_dir / f"{base_name}_coherence.h5", res_coh, 'coherence')
 
-    res_phase = mss.compute_phase(pairs)
+    res_phase = mss.compute_phase(pairs, conversion=phase_conversion)  # 传递转换方式
     mss.save_results(output_dir / f"{base_name}_phase.h5", res_phase, 'phase')
 
     print(f"分析完成，结果保存在: {output_dir}")

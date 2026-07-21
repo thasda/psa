@@ -54,6 +54,11 @@ class SpectrumPlotter:
             if 'phase' in self._data[pair] and 'phase' not in kinds:
                 kinds.append('phase')
             self._pair_kinds[pair] = list(set(kinds))
+        self.phase_conversion = 'rad'
+        if 'phase' in self.available_files:
+            with h5py.File(self.available_files['phase'], 'r') as f:
+                if 'phase_conversion' in f.attrs:
+                    self.phase_conversion = f.attrs['phase_conversion']
 
     def _load_data(self):
         """加载所有可用文件中的通道对数据"""
@@ -96,6 +101,30 @@ class SpectrumPlotter:
     def get_pairs(self) -> List[str]:
         return list(self._data.keys())
 
+    def _convert_phase(self, phase_rad: np.ndarray, freq: np.ndarray, conversion: str) -> np.ndarray:
+        """根据转换类型将原始相位（弧度）转换为指定格式"""
+        if conversion == 'rad':
+            return phase_rad
+        elif conversion == 'deg':
+            return np.rad2deg(phase_rad)
+        elif conversion == 'unwrap_rad':
+            return np.unwrap(phase_rad)
+        elif conversion == 'unwrap_deg':
+            return np.rad2deg(np.unwrap(phase_rad))
+        elif conversion == 'time_delay':
+            with np.errstate(divide='ignore', invalid='ignore'):
+                return np.divide(phase_rad, 2 * np.pi * freq,
+                                 out=np.full_like(phase_rad, np.nan),
+                                 where=(freq > 1e-12))
+        elif conversion == 'group_delay':
+            if len(phase_rad) < 3:
+                raise ValueError("至少需要3个频率点才能计算群延迟")
+            omega = 2 * np.pi * freq
+            dphase = np.gradient(phase_rad, omega)
+            return -dphase
+        else:
+            raise ValueError(f"不支持的相位转换: {conversion}")
+
     def get_available_kinds(self, pair: Optional[str] = None) -> List[str]:
         if pair is not None:
             return self._pair_kinds.get(pair, [])
@@ -104,7 +133,7 @@ class SpectrumPlotter:
             common &= set(self._pair_kinds.get(p, []))
         return list(common)
 
-    def _get_data(self, pair: str, kind: str) -> Tuple[np.ndarray, np.ndarray, str]:
+    def _get_data(self, pair: str, kind: str, phase_conversion: Optional[str] = None) -> Tuple[np.ndarray, np.ndarray, str]:
         data_dict = self._data[pair]
         freq = data_dict['freq']
         if kind == 'magnitude':
@@ -117,14 +146,25 @@ class SpectrumPlotter:
             else:
                 raise ValueError(f"无法从 {pair} 提取幅度")
         elif kind == 'phase':
+            # 获取原始相位（弧度）
             if data_dict['phase'] is not None:
-                data = data_dict['phase']
-                ylabel = 'Phase (rad)'
+                phase_rad = data_dict['phase']
             elif data_dict['Pxy'] is not None:
-                data = np.angle(data_dict['Pxy'])
-                ylabel = 'Phase (rad)'
+                phase_rad = np.angle(data_dict['Pxy'])
             else:
                 raise ValueError(f"无法从 {pair} 提取相位")
+            # 应用转换
+            if phase_conversion is None:
+                phase_conversion = self.phase_conversion
+            data = self._convert_phase(phase_rad, freq, phase_conversion)
+            # 生成合适的 ylabel
+            if phase_conversion in ['time_delay', 'group_delay']:
+                ylabel = f'Phase ({phase_conversion}) [s]'
+            elif phase_conversion in ['deg', 'unwrap_deg']:
+                ylabel = 'Phase (deg)'
+            else:  # 'rad', 'unwrap_rad'
+                ylabel = 'Phase (rad)'
+            return freq, data, ylabel
         elif kind == 'coherence':
             if data_dict['coherence'] is not None:
                 data = data_dict['coherence']
@@ -179,12 +219,13 @@ class SpectrumPlotter:
         return cursor
 
     # ---------- 单图绘制（增强版） ----------
-    def plot(self, pairs: Union[str, List[str]], kind: str = 'auto',
+    def plot(self, pairs, kind: str = 'auto',phase_conversion:Optional[str] = None,
              xscale: str = 'linear', yscale: str = 'linear',
              line_kwargs: Optional[Dict[str, Any]] = None,
              figsize: Tuple[int, int] = (10, 6), title: Optional[str] = None,
              save_path: Optional[str] = None, show: bool = True,
-             interactive: bool = True):
+             interactive: bool = True
+             ):
         """
         绘制一个或多个通道对的指定类型图谱。
 
@@ -200,6 +241,9 @@ class SpectrumPlotter:
             show          : 是否显示
             interactive   : 是否启用交互式数据点标记
         """
+        for i, pair in enumerate(pairs):
+            freq, data, ylabel = self._get_data(pair, kind, phase_conversion=phase_conversion)
+
         if isinstance(pairs, str):
             pairs = [pairs]
         if len(pairs) == 0:
@@ -256,6 +300,7 @@ class SpectrumPlotter:
 
     # ---------- 三合一组合图（增强版） ----------
     def plot_combined(self, pair: str,
+                      phase_conversion: Optional[str] = None,
                       coh_threshold: float = 0.8,
                       mask_below_threshold: bool = True,
                       interference_freqs: Optional[List[float]] = None,
@@ -307,12 +352,17 @@ class SpectrumPlotter:
             mag = np.abs(data['Pxy'])
         else:
             raise ValueError("缺少互功率谱数据")
+        # 获取原始相位
         if data['phase'] is not None:
-            phase = data['phase']
+            phase_rad = data['phase']
         elif data['Pxy'] is not None:
-            phase = np.angle(data['Pxy'])
+            phase_rad = np.angle(data['Pxy'])
         else:
             raise ValueError("缺少相位数据")
+        # 应用转换
+        if phase_conversion is None:
+            phase_conversion = self.phase_conversion
+        phase = self._convert_phase(phase_rad, freq, phase_conversion)
 
         # 默认线条样式
         if line_kwargs_coh is None:
@@ -351,7 +401,7 @@ class SpectrumPlotter:
         # 绘制相位谱
         ax_phase.plot(freq, phase, **line_kwargs_phase)
         ax_phase.set_xlabel('Frequency (Hz)')
-        ax_phase.set_ylabel('Phase (rad)')
+        ax_phase.set_ylabel(f'Phase ({phase_conversion})')
         ax_phase.grid(True, alpha=0.3)
         ax_phase.set_xscale(xscale)
         ax_phase.set_yscale(yscale_phase)

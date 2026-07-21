@@ -99,7 +99,7 @@ class SpectralAnalysisApp:
 
         # 窗口长度
         ttk.Label(param_frame, text="窗口长度 (nperseg):").grid(row=0, column=0, sticky=tk.W, padx=5)
-        nperseg_options = [64, 128, 256, 512, 1024, 2048]
+        nperseg_options = [64, 128, 256, 512, 1024, 2048,4096, 8192, 16384, 32768, 65536]
         self.nperseg_combo = ttk.Combobox(param_frame, values=nperseg_options,
                                           textvariable=self.nperseg_var, state='readonly', width=10)
         self.nperseg_combo.grid(row=0, column=1, sticky=tk.W, padx=5)

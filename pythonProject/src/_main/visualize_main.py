@@ -115,6 +115,14 @@ class VisualizeApp:
         self.interactive_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(settings_frame, text="交互标记", variable=self.interactive_var).grid(row=1, column=8, sticky=tk.W, padx=10, pady=2)
 
+        # 相位转换方式
+        ttk.Label(settings_frame, text="相位转换:").grid(row=1, column=8, sticky=tk.W, padx=10, pady=2)
+        self.phase_conversion_var = tk.StringVar(value="rad")
+        phase_conv_combo = ttk.Combobox(settings_frame, textvariable=self.phase_conversion_var,
+                                        values=['rad', 'deg', 'unwrap_rad', 'unwrap_deg', 'time_delay', 'group_delay'],
+                                        width=10, state='readonly')
+        phase_conv_combo.grid(row=1, column=9, sticky=tk.W, padx=2, pady=2)
+
         # 让各列在窗口拉伸时保持比例（可选）
         for col in range(9):
             settings_frame.columnconfigure(col, weight=1)
@@ -202,9 +210,11 @@ class VisualizeApp:
             # 单图使用统一的线条颜色（使用相干色作为默认）
             line_kwargs = {'color': self.color_coh_var.get(), 'linewidth': self.linewidth_var.get()}
             interactive = self.interactive_var.get()
+            phase_conversion = self.phase_conversion_var.get()
             self.plotter.plot(
                 pairs=selected,
                 kind=kind,
+                phase_conversion=phase_conversion,
                 xscale=xscale,
                 line_kwargs=line_kwargs,
                 interactive=interactive,
@@ -263,10 +273,12 @@ class VisualizeApp:
         line_kwargs_mag = {'color': self.color_mag_var.get(), 'linewidth': self.linewidth_var.get()}
         line_kwargs_phase = {'color': self.color_phase_var.get(), 'linewidth': self.linewidth_var.get()}
         interactive = self.interactive_var.get()
+        phase_conversion = self.phase_conversion_var.get()
 
         try:
             self.plotter.plot_combined(
                 pair=pair,
+                phase_conversion=phase_conversion,
                 coh_threshold=coh_threshold,
                 interference_freqs=inter_freqs,
                 xscale=xscale,
